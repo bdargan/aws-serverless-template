@@ -1,0 +1,137 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LambdaDeployBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {},
+      "Metadata": {}
+    },
+    "ApiGatewayRestApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "The API resource",
+        "Name": {
+          "Fn::Join": [
+            "-", [{
+                "Ref": "ResourcePrefix"
+              },
+              "-lambda-execution-role"
+            ]
+          ]
+        }
+      }
+    },
+    "InstanceDataBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "CorsConfiguration": {
+          "CorsRules": [{
+            "AllowedHeaders": ["*"],
+            "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
+            "AllowedOrigins": ["*"],
+            "MaxAge": "3000"
+          }]
+        }
+      }
+    },
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "lambda.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }]
+        }
+      },
+      "Metadata": {}
+    },
+    "LambdaExecutionPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "LambdaExecutionPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:*",
+              "logs:CreateLogGroup",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+          }]
+        },
+        "Roles": [{
+          "Ref": "LambdaExecutionRole"
+        }]
+      }
+    }
+  },
+  "Parameters": {
+    "ResourcePrefix": {
+      "Type": "String",
+      "Description": "Resource prefix to use when creating necessary objects",
+      "AllowedPattern": "^[a-z0-9][a-z0-9-]+$",
+      "ConstraintDescription": "Resource prefix can only contain lower-case letters, numbers, and dashes",
+      "MaxLength": 30
+    }
+  },
+  "Outputs": {
+    "AwsAccountId": {
+      "Value": {
+        "Ref": "AWS::AccountId"
+      },
+      "Description": "Account ID of the AWS account"
+    },
+    "AwsRegion": {
+      "Value": {
+        "Ref": "AWS::Region"
+      },
+      "Description": "Region of the AWS deployment"
+    },
+    "ApiGatewayRestApi": {
+      "Value": {
+        "Ref": "ApiGatewayRestApi"
+      },
+      "Description": "Name of the ApiGatewayRestApi"
+    },
+    "LambdaExecutionRole": {
+      "Value": {
+        "Ref": "LambdaExecutionRole"
+      },
+      "Description": "Name of the Lambda execution role"
+    },
+    "LambdaExecutionRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaExecutionRole",
+          "Arn"
+        ]
+      },
+      "Description": "ARN of the Lambda execution role"
+    },
+    "LambdaDeployBucket": {
+      "Value": {
+        "Ref": "LambdaDeployBucket"
+      },
+      "Description": "Name of the private S3 bucket used to store zipped Lambda function code"
+    },
+    "InstanceDataBucket": {
+      "Value": {
+        "Ref": "InstanceDataBucket"
+      },
+      "Description": "Name of the S3 bucket used to store application-specific user data"
+    }
+  }
+}
+
